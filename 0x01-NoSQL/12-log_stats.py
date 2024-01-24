@@ -7,35 +7,27 @@ if __name__ == "__main__":
     client = MongoClient('mongodb://127.0.0.1:27017')
     nginx_collection = client.logs.nginx
 
+    # Count the total number of logs
     n_logs = nginx_collection.count_documents({})
     print(f'{n_logs} logs')
 
+    # Count the number of logs for each HTTP method
     methods = ["GET", "POST", "PUT", "PATCH", "DELETE"]
     print('Methods:')
     for method in methods:
         count = nginx_collection.count_documents({"method": method})
         print(f'\tmethod {method}: {count}')
 
-    status_check = nginx_collection.count_documents(
-        {"method": "GET", "path": "/status"}
-    )
-
+    # Count the number of logs with method GET and path /status
+    status_check = nginx_collection.count_documents({"method": "GET", "path": "/status"})
     print(f'{status_check} status check')
 
+    # Count and list the top 10 IPs
     top_ips = nginx_collection.aggregate([
-        {"$group":
-            {
-                "_id": "$ip",
-                "count": {"$sum": 1}
-            }
-         },
+        {"$group": {"_id": "$ip", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}},
         {"$limit": 10},
-        {"$project": {
-            "_id": 0,
-            "ip": "$_id",
-            "count": 1
-        }}
+        {"$project": {"_id": 0, "ip": "$_id", "count": 1}}
     ])
 
     print("IPs:")
